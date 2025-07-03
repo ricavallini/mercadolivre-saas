@@ -2,7 +2,26 @@ import { Bars3Icon, SunIcon, MoonIcon } from "@heroicons/react/24/outline";
 import { sidebarTabs } from "./tabs";
 import { classNames } from "./utils";
 
-export function Sidebar({ selectedIndex, setSelectedIndex, darkMode, setDarkMode, sidebarOpen, setSidebarOpen }) {
+type SidebarTab = {
+  name: string;
+  icon: React.ComponentType<{ className?: string }>;
+};
+
+export function Sidebar({
+  selectedIndex,
+  setSelectedIndex,
+  darkMode,
+  setDarkMode,
+  sidebarOpen,
+  setSidebarOpen
+}: {
+  selectedIndex: number;
+  setSelectedIndex: (idx: number) => void;
+  darkMode: boolean;
+  setDarkMode: (val: boolean | ((prev: boolean) => boolean)) => void;
+  sidebarOpen: boolean;
+  setSidebarOpen: (val: boolean) => void;
+}) {
   return (
     <aside className={classNames(
       "fixed z-40 left-0 top-0 h-full w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col transition-transform duration-300",
@@ -16,7 +35,7 @@ export function Sidebar({ selectedIndex, setSelectedIndex, darkMode, setDarkMode
         </button>
       </div>
       <nav className="flex-1 overflow-y-auto py-4">
-        {sidebarTabs.map((tab, idx) => (
+        {sidebarTabs.map((tab: SidebarTab, idx: number) => (
           <button
             key={tab.name}
             className={classNames(
