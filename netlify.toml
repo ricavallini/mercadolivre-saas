@@ -1,0 +1,26 @@
+[build]
+  command = "bash scripts/netlify-build.sh"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "18"
+  NPM_VERSION = "9"
+
+# Configuração para resolver problema do Prisma no Netlify
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# Configuração de cache para Prisma
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
+# Configuração para evitar cache do Prisma Client
+[build.processing]
+  skip_processing = false
+
+# Configuração de build para Prisma
+[build.environment]
+  PRISMA_GENERATE_DATAPROXY = "true"
+  PRISMA_CLIENT_ENGINE_TYPE = "library" 
