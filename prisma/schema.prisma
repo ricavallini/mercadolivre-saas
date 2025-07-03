@@ -1,0 +1,57 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id    Int     @id @default(autoincrement())
+  email String  @unique
+  name  String?
+  mercadolivreConnection MercadoLivreConnection?
+}
+
+model MercadoLivreConnection {
+  id           Int      @id @default(autoincrement())
+  accessToken  String
+  refreshToken String
+  expiresAt    DateTime
+  userId       Int      @unique
+  user         User     @relation(fields: [userId], references: [id])
+}
+
+model Customer {
+  id        Int      @id @default(autoincrement())
+  mlCustomerId String   @unique
+  firstName String
+  lastName  String
+  email     String
+  phone     String?
+  sales     Sale[]
+}
+
+model Sale {
+  id              Int      @id @default(autoincrement())
+  mlSaleId        String   @unique
+  status          String
+  amount          Float
+  customerId      Int
+  customer        Customer @relation(fields: [customerId], references: [id])
+  shippingLabel   ShippingLabel?
+  createdAt       DateTime @default(now())
+}
+
+model ShippingLabel {
+  id             Int      @id @default(autoincrement())
+  mlShippingId   String   @unique
+  labelUrl       String
+  extractedPhone String?
+  saleId         Int      @unique
+  sale           Sale     @relation(fields: [saleId], references: [id])
+}

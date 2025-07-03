@@ -1,0 +1,20 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/next"
+    }
+  ],
+  "env": {
+    "NEXT_PUBLIC_APP_URL": "@next_public_app_url"
+  },
+  "functions": {
+    "src/app/api/auth/mercadolivre/route.ts": {
+      "maxDuration": 30
+    },
+    "src/app/api/auth/mercadolivre/callback/route.ts": {
+      "maxDuration": 30
+    }
+  }
+} 
