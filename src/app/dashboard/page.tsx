@@ -1,22 +1,28 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Tab } from "@headlessui/react";
+import { CheckCircleIcon, ExclamationCircleIcon, ArrowPathIcon } from "@heroicons/react/24/outline";
 
-const TABS = [
-  { key: "me", label: "Meus Dados" },
-  { key: "products", label: "Produtos à Venda" },
-  { key: "orders", label: "Vendas" },
-  { key: "orderDetails", label: "Detalhes da Venda" },
-  { key: "messages", label: "Mensagens" },
-  { key: "shipping", label: "Etiquetas de Envio" },
-  { key: "buyer", label: "Dados do Cliente" },
-  { key: "updateOrder", label: "Atualizar Status" },
-  { key: "sendMessage", label: "Enviar Mensagem" },
+function classNames(...classes: string[]) {
+  return classes.filter(Boolean).join(" ");
+}
+
+const tabs = [
+  { name: "Meus Dados" },
+  { name: "Produtos à venda" },
+  { name: "Vendas" },
+  { name: "Detalhes da venda" },
+  { name: "Mensagens" },
+  { name: "Etiquetas de envio" },
+  { name: "Dados do Cliente" },
+  { name: "Atualizar status do pedido" },
+  { name: "Enviar mensagem ao comprador" },
 ];
 
 export default function Dashboard() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState("me");
+  const [selectedIndex, setSelectedIndex] = useState(0);
   const [mlUser, setMlUser] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -45,7 +51,7 @@ export default function Dashboard() {
       if (!res.ok) {
         setError(data.error || "Erro ao buscar dados do Mercado Livre");
       } else {
-        setMlUser(data);
+        setMlUser(data.data || data);
       }
     } catch (err) {
       setError("Erro de conexão");
@@ -54,625 +60,789 @@ export default function Dashboard() {
     }
   };
 
-  function renderTab() {
-    switch (activeTab) {
-      case "me":
-        return (
-          <div>
-            <button
-              className="bg-green-600 hover:bg-green-800 text-white font-bold py-2 px-6 rounded mb-4"
-              onClick={fetchMLUser}
-              disabled={loading}
-            >
-              {loading ? "Buscando dados..." : "Ver dados do Mercado Livre"}
-            </button>
-            {error && <div className="text-red-500 mt-2">{error}</div>}
-            {mlUser && (
-              <div className="bg-white mt-4 p-4 rounded shadow text-left max-w-xl mx-auto overflow-x-auto">
-                <pre className="text-xs whitespace-pre-wrap break-all">{JSON.stringify(mlUser, null, 2)}</pre>
-              </div>
-            )}
-          </div>
-        );
-      case "products":
-        return <ProductsTab />;
-      case "orders":
-        return <OrdersTab />;
-      case "orderDetails":
-        return <OrderDetailsTab />;
-      case "messages":
-        return <MessagesTab />;
-      case "shipping":
-        return <ShippingTab />;
-      case "buyer":
-        return <BuyerTab />;
-      case "updateOrder":
-        return <UpdateOrderTab />;
-      case "sendMessage":
-        return <SendMessageTab />;
-      default:
-        return null;
-    }
-  }
-
-  function ProductsTab() {
-    const [products, setProducts] = useState<any[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
-    const [total, setTotal] = useState(0);
-
-    const fetchProducts = async () => {
-      setLoading(true);
-      setError("");
-      setProducts([]);
-      try {
-        const token = localStorage.getItem("ml_access_token");
-        const res = await fetch("/api/ml/products", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await res.json();
-        if (!res.ok) {
-          setError(data.error || "Erro ao buscar produtos");
-        } else {
-          setProducts(data.products || []);
-          setTotal(data.total || 0);
-        }
-      } catch (err) {
-        setError("Erro de conexão");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    return (
-      <div>
-        <button
-          className="bg-green-600 hover:bg-green-800 text-white font-bold py-2 px-6 rounded mb-4"
-          onClick={fetchProducts}
-          disabled={loading}
-        >
-          {loading ? "Buscando produtos..." : "Listar Produtos à Venda"}
-        </button>
-        {error && <div className="text-red-500 mt-2">{error}</div>}
-        {total > 0 && (
-          <div className="mb-2 text-gray-700">Total de produtos ativos: {total}</div>
-        )}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {products.map((p: any, i: number) => (
-            <div key={p.id || i} className="bg-white p-4 rounded shadow border text-left">
-              <div className="font-bold text-blue-700 mb-1">{p.body?.title || p.title}</div>
-              <div className="text-sm text-gray-600 mb-1">ID: {p.body?.id || p.id}</div>
-              <div className="text-sm text-gray-600 mb-1">Preço: R$ {p.body?.price || p.price}</div>
-              <div className="text-sm text-gray-600 mb-1">Estoque: {p.body?.available_quantity || p.available_quantity}</div>
-              {p.body?.thumbnail || p.thumbnail ? (
-                <img src={p.body?.thumbnail || p.thumbnail} alt="thumb" className="w-24 h-24 object-contain mt-2" />
-              ) : null}
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  function OrdersTab() {
-    const [orders, setOrders] = useState<any[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
-    const [total, setTotal] = useState(0);
-
-    const fetchOrders = async () => {
-      setLoading(true);
-      setError("");
-      setOrders([]);
-      try {
-        const token = localStorage.getItem("ml_access_token");
-        const res = await fetch("/api/ml/orders", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await res.json();
-        if (!res.ok) {
-          setError(data.error || "Erro ao buscar vendas");
-        } else {
-          setOrders(data.orders || []);
-          setTotal(data.total || 0);
-        }
-      } catch (err) {
-        setError("Erro de conexão");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    return (
-      <div>
-        <button
-          className="bg-green-600 hover:bg-green-800 text-white font-bold py-2 px-6 rounded mb-4"
-          onClick={fetchOrders}
-          disabled={loading}
-        >
-          {loading ? "Buscando vendas..." : "Listar Vendas"}
-        </button>
-        {error && <div className="text-red-500 mt-2">{error}</div>}
-        {total > 0 && (
-          <div className="mb-2 text-gray-700">Total de vendas: {total}</div>
-        )}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {orders.map((o: any, i: number) => (
-            <div key={o.id || i} className="bg-white p-4 rounded shadow border text-left">
-              <div className="font-bold text-blue-700 mb-1">Venda #{o.id}</div>
-              <div className="text-sm text-gray-600 mb-1">Status: {o.status}</div>
-              <div className="text-sm text-gray-600 mb-1">Data: {o.date_created?.slice(0, 10)}</div>
-              <div className="text-sm text-gray-600 mb-1">Comprador: {o.buyer?.nickname}</div>
-              <div className="text-sm text-gray-600 mb-1">Total: R$ {o.total_amount}</div>
-              <div className="text-sm text-gray-600 mb-1">Itens: {o.order_items?.map((it: any) => it.item.title).join(", ")}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  function OrderDetailsTab() {
-    const [orderId, setOrderId] = useState("");
-    const [order, setOrder] = useState<any>(null);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
-
-    const fetchOrder = async () => {
-      setLoading(true);
-      setError("");
-      setOrder(null);
-      try {
-        const token = localStorage.getItem("ml_access_token");
-        const res = await fetch(`/api/ml/order-details?orderId=${orderId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await res.json();
-        if (!res.ok) {
-          setError(data.error || "Erro ao buscar detalhes da venda");
-        } else {
-          setOrder(data);
-        }
-      } catch (err) {
-        setError("Erro de conexão");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    return (
-      <div>
-        <form
-          onSubmit={e => {
-            e.preventDefault();
-            fetchOrder();
-          }}
-          className="mb-4"
-        >
-          <input
-            type="text"
-            className="px-3 py-2 border rounded mr-2"
-            placeholder="ID da venda (orderId)"
-            value={orderId}
-            onChange={e => setOrderId(e.target.value)}
-            required
-          />
-          <button
-            type="submit"
-            className="bg-green-600 hover:bg-green-800 text-white font-bold py-2 px-6 rounded"
-            disabled={loading}
-          >
-            {loading ? "Buscando..." : "Buscar Detalhes"}
-          </button>
-        </form>
-        {error && <div className="text-red-500 mt-2">{error}</div>}
-        {order && (
-          <div className="bg-white mt-4 p-4 rounded shadow text-left max-w-xl mx-auto overflow-x-auto">
-            <pre className="text-xs whitespace-pre-wrap break-all">{JSON.stringify(order, null, 2)}</pre>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  function MessagesTab() {
-    const [orderId, setOrderId] = useState("");
-    const [messages, setMessages] = useState<any[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
-
-    const fetchMessages = async () => {
-      setLoading(true);
-      setError("");
-      setMessages([]);
-      try {
-        const token = localStorage.getItem("ml_access_token");
-        const res = await fetch(`/api/ml/messages?orderId=${orderId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await res.json();
-        if (!res.ok) {
-          setError(data.error || "Erro ao buscar mensagens");
-        } else {
-          setMessages(data.results || []);
-        }
-      } catch (err) {
-        setError("Erro de conexão");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    return (
-      <div>
-        <form
-          onSubmit={e => {
-            e.preventDefault();
-            fetchMessages();
-          }}
-          className="mb-4"
-        >
-          <input
-            type="text"
-            className="px-3 py-2 border rounded mr-2"
-            placeholder="ID da venda (orderId)"
-            value={orderId}
-            onChange={e => setOrderId(e.target.value)}
-            required
-          />
-          <button
-            type="submit"
-            className="bg-green-600 hover:bg-green-800 text-white font-bold py-2 px-6 rounded"
-            disabled={loading}
-          >
-            {loading ? "Buscando..." : "Buscar Mensagens"}
-          </button>
-        </form>
-        {error && <div className="text-red-500 mt-2">{error}</div>}
-        {messages.length > 0 && (
-          <div className="bg-white mt-4 p-4 rounded shadow text-left max-w-xl mx-auto overflow-x-auto">
-            <div className="font-bold mb-2">Mensagens:</div>
-            <ul className="text-xs">
-              {messages.map((msg: any, i: number) => (
-                <li key={msg.id || i} className="mb-2 border-b pb-2">
-                  <div><b>De:</b> {msg.sender?.user_id || msg.sender?.id}</div>
-                  <div><b>Para:</b> {msg.recipients?.map((r: any) => r.user_id || r.id).join(", ")}</div>
-                  <div><b>Mensagem:</b> {msg.text?.plain || msg.text}</div>
-                  <div className="text-gray-500">{msg.date_created?.replace("T", " ").slice(0, 16)}</div>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  function ShippingTab() {
-    const [orderId, setOrderId] = useState("");
-    const [shipping, setShipping] = useState<any>(null);
-    const [labelUrl, setLabelUrl] = useState<string | null>(null);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
-
-    const fetchShipping = async () => {
-      setLoading(true);
-      setError("");
-      setShipping(null);
-      setLabelUrl(null);
-      try {
-        const token = localStorage.getItem("ml_access_token");
-        const res = await fetch(`/api/ml/shipping?orderId=${orderId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await res.json();
-        if (!res.ok) {
-          setError(data.error || "Erro ao buscar etiqueta");
-        } else {
-          setShipping(data.shipping);
-          setLabelUrl(data.labelUrl);
-        }
-      } catch (err) {
-        setError("Erro de conexão");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    return (
-      <div>
-        <form
-          onSubmit={e => {
-            e.preventDefault();
-            fetchShipping();
-          }}
-          className="mb-4"
-        >
-          <input
-            type="text"
-            className="px-3 py-2 border rounded mr-2"
-            placeholder="ID da venda (orderId)"
-            value={orderId}
-            onChange={e => setOrderId(e.target.value)}
-            required
-          />
-          <button
-            type="submit"
-            className="bg-green-600 hover:bg-green-800 text-white font-bold py-2 px-6 rounded"
-            disabled={loading}
-          >
-            {loading ? "Buscando..." : "Buscar Etiqueta"}
-          </button>
-        </form>
-        {error && <div className="text-red-500 mt-2">{error}</div>}
-        {shipping && (
-          <div className="bg-white mt-4 p-4 rounded shadow text-left max-w-xl mx-auto overflow-x-auto">
-            <div className="font-bold mb-2">Dados de Envio:</div>
-            <pre className="text-xs whitespace-pre-wrap break-all">{JSON.stringify(shipping, null, 2)}</pre>
-          </div>
-        )}
-        {labelUrl && (
-          <div className="mt-4">
-            <a
-              href={labelUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-blue-600 hover:bg-blue-800 text-white font-bold py-2 px-6 rounded"
-            >
-              Baixar Etiqueta de Envio
-            </a>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  function BuyerTab() {
-    const [orderId, setOrderId] = useState("");
-    const [buyer, setBuyer] = useState<any>(null);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
-
-    const fetchBuyer = async () => {
-      setLoading(true);
-      setError("");
-      setBuyer(null);
-      try {
-        const token = localStorage.getItem("ml_access_token");
-        const res = await fetch(`/api/ml/buyer?orderId=${orderId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await res.json();
-        if (!res.ok) {
-          setError(data.error || "Erro ao buscar dados do cliente");
-        } else {
-          setBuyer(data);
-        }
-      } catch (err) {
-        setError("Erro de conexão");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    return (
-      <div>
-        <form
-          onSubmit={e => {
-            e.preventDefault();
-            fetchBuyer();
-          }}
-          className="mb-4"
-        >
-          <input
-            type="text"
-            className="px-3 py-2 border rounded mr-2"
-            placeholder="ID da venda (orderId)"
-            value={orderId}
-            onChange={e => setOrderId(e.target.value)}
-            required
-          />
-          <button
-            type="submit"
-            className="bg-green-600 hover:bg-green-800 text-white font-bold py-2 px-6 rounded"
-            disabled={loading}
-          >
-            {loading ? "Buscando..." : "Buscar Cliente"}
-          </button>
-        </form>
-        {error && <div className="text-red-500 mt-2">{error}</div>}
-        {buyer && (
-          <div className="bg-white mt-4 p-4 rounded shadow text-left max-w-xl mx-auto overflow-x-auto">
-            <div className="font-bold mb-2">Dados do Cliente:</div>
-            <pre className="text-xs whitespace-pre-wrap break-all">{JSON.stringify(buyer, null, 2)}</pre>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  function UpdateOrderTab() {
-    const [orderId, setOrderId] = useState("");
-    const [status, setStatus] = useState("");
-    const [loading, setLoading] = useState(false);
-    const [result, setResult] = useState<string | null>(null);
-    const [error, setError] = useState("");
-
-    // Status possíveis (exemplo: "paid", "cancelled", "confirmed", "shipped", "delivered")
-    const statusOptions = [
-      { value: "paid", label: "Pago" },
-      { value: "confirmed", label: "Confirmado" },
-      { value: "shipped", label: "Enviado" },
-      { value: "delivered", label: "Entregue" },
-      { value: "cancelled", label: "Cancelado" },
-    ];
-
-    const handleUpdate = async (e: React.FormEvent) => {
-      e.preventDefault();
-      setLoading(true);
-      setResult(null);
-      setError("");
-      try {
-        const token = localStorage.getItem("ml_access_token");
-        const res = await fetch("/api/ml/update-order", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ orderId, status }),
-        });
-        const data = await res.json();
-        if (!res.ok) {
-          setError(data.error || "Erro ao atualizar status");
-        } else {
-          setResult("Status atualizado com sucesso!");
-        }
-      } catch (err) {
-        setError("Erro de conexão");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    return (
-      <div>
-        <form onSubmit={handleUpdate} className="mb-4">
-          <input
-            type="text"
-            className="px-3 py-2 border rounded mr-2"
-            placeholder="ID da venda (orderId)"
-            value={orderId}
-            onChange={e => setOrderId(e.target.value)}
-            required
-          />
-          <select
-            className="px-3 py-2 border rounded mr-2"
-            value={status}
-            onChange={e => setStatus(e.target.value)}
-            required
-          >
-            <option value="">Selecione o novo status</option>
-            {statusOptions.map(opt => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-100 flex flex-col items-center py-8 px-2">
+      <div className="w-full max-w-4xl bg-white rounded-2xl shadow-xl p-6">
+        <h1 className="text-3xl font-bold text-blue-800 mb-2 text-center">Dashboard Mercado Livre</h1>
+        <p className="text-gray-500 mb-6 text-center">Gerencie sua conta Mercado Livre de forma simples, rápida e segura.</p>
+        <Tab.Group selectedIndex={selectedIndex} onChange={setSelectedIndex}>
+          <Tab.List className="flex space-x-1 rounded-xl bg-blue-50 p-1 mb-6 overflow-x-auto">
+            {tabs.map((tab, idx) => (
+              <Tab
+                key={tab.name}
+                className={({ selected }: { selected: boolean }) =>
+                  classNames(
+                    "w-full py-2.5 px-4 text-sm leading-5 font-semibold rounded-lg",
+                    selected
+                      ? "bg-blue-600 text-white shadow"
+                      : "text-blue-700 hover:bg-blue-100 hover:text-blue-900"
+                  )
+                }
+              >
+                {tab.name}
+              </Tab>
             ))}
-          </select>
-          <button
-            type="submit"
-            className="bg-blue-600 hover:bg-blue-800 text-white font-bold py-2 px-6 rounded"
-            disabled={loading}
-          >
-            {loading ? "Atualizando..." : "Atualizar Status"}
-          </button>
-        </form>
-        {error && <div className="text-red-500 mt-2">{error}</div>}
-        {result && <div className="text-green-600 mt-2">{result}</div>}
+          </Tab.List>
+          <Tab.Panels>
+            <Tab.Panel><MeTab /></Tab.Panel>
+            <Tab.Panel><ProductsTab /></Tab.Panel>
+            <Tab.Panel><OrdersTab /></Tab.Panel>
+            <Tab.Panel><OrderDetailsTab /></Tab.Panel>
+            <Tab.Panel><MessagesTab /></Tab.Panel>
+            <Tab.Panel><ShippingTab /></Tab.Panel>
+            <Tab.Panel><BuyerTab /></Tab.Panel>
+            <Tab.Panel><UpdateOrderTab /></Tab.Panel>
+            <Tab.Panel><SendMessageTab /></Tab.Panel>
+          </Tab.Panels>
+        </Tab.Group>
       </div>
-    );
-  }
+    </div>
+  );
+}
 
-  function SendMessageTab() {
-    const [orderId, setOrderId] = useState("");
-    const [text, setText] = useState("");
-    const [loading, setLoading] = useState(false);
-    const [result, setResult] = useState<string | null>(null);
-    const [error, setError] = useState("");
+function MeTab() {
+  const [mlUser, setMlUser] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-    const handleSend = async (e: React.FormEvent) => {
-      e.preventDefault();
-      setLoading(true);
-      setResult(null);
-      setError("");
-      try {
-        const token = localStorage.getItem("ml_access_token");
-        const res = await fetch("/api/ml/send-message", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ orderId, text }),
-        });
-        const data = await res.json();
-        if (!res.ok) {
-          setError(data.error || "Erro ao enviar mensagem");
-        } else {
-          setResult("Mensagem enviada com sucesso!");
-          setText("");
-        }
-      } catch (err) {
-        setError("Erro de conexão");
-      } finally {
-        setLoading(false);
+  const fetchMLUser = async () => {
+    setLoading(true);
+    setError("");
+    setMlUser(null);
+    try {
+      const token = localStorage.getItem("ml_access_token");
+      const res = await fetch("/api/ml/me", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Erro ao buscar dados do Mercado Livre");
+      } else {
+        setMlUser(data.data || data);
       }
-    };
-
-    return (
-      <div>
-        <form onSubmit={handleSend} className="mb-4">
-          <input
-            type="text"
-            className="px-3 py-2 border rounded mr-2"
-            placeholder="ID da venda (orderId)"
-            value={orderId}
-            onChange={e => setOrderId(e.target.value)}
-            required
-          />
-          <textarea
-            className="px-3 py-2 border rounded mr-2 w-64 align-top"
-            placeholder="Mensagem ao comprador"
-            value={text}
-            onChange={e => setText(e.target.value)}
-            required
-            rows={3}
-          />
-          <button
-            type="submit"
-            className="bg-purple-600 hover:bg-purple-800 text-white font-bold py-2 px-6 rounded"
-            disabled={loading}
-          >
-            {loading ? "Enviando..." : "Enviar Mensagem"}
-          </button>
-        </form>
-        {error && <div className="text-red-500 mt-2">{error}</div>}
-        {result && <div className="text-green-600 mt-2">{result}</div>}
-      </div>
-    );
-  }
+    } catch (err) {
+      setError("Erro de conexão");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-8">
-      <div className="text-center max-w-4xl w-full">
-        <h1 className="text-4xl font-bold mb-4">Dashboard - Micro-SaaS Mercado Livre</h1>
-        <div className="flex flex-wrap justify-center gap-2 mb-8">
-          {TABS.map(tab => (
-            <button
-              key={tab.key}
-              className={`px-4 py-2 rounded font-bold border ${activeTab === tab.key ? "bg-blue-600 text-white" : "bg-white text-blue-600 border-blue-600"}`}
-              onClick={() => setActiveTab(tab.key)}
-            >
-              {tab.label}
-            </button>
+    <div className="flex flex-col items-center justify-center min-h-[300px]">
+      <button
+        onClick={fetchMLUser}
+        className="mb-4 bg-blue-600 hover:bg-blue-800 text-white font-bold py-2 px-6 rounded shadow transition"
+        disabled={loading}
+      >
+        {loading ? (
+          <span className="flex items-center gap-2"><ArrowPathIcon className="w-5 h-5 animate-spin" />Buscando...</span>
+        ) : (
+          <span>Atualizar Meus Dados</span>
+        )}
+      </button>
+      {error && (
+        <div className="flex items-center gap-2 text-red-600 bg-red-50 border border-red-200 rounded p-3 mb-2">
+          <ExclamationCircleIcon className="w-5 h-5" />
+          <span>{error}</span>
+        </div>
+      )}
+      {mlUser && (
+        <div className="bg-white rounded-xl shadow p-6 w-full max-w-lg text-left">
+          <div className="flex items-center gap-2 mb-2">
+            <CheckCircleIcon className="w-6 h-6 text-green-500" />
+            <span className="font-bold text-lg">Dados do Usuário</span>
+          </div>
+          <div className="text-gray-700 text-sm mb-2">ID: <span className="font-mono">{mlUser.id}</span></div>
+          <div className="text-gray-700 text-sm mb-2">Nome: <span className="font-semibold">{mlUser.nickname || mlUser.first_name + ' ' + mlUser.last_name}</span></div>
+          <div className="text-gray-700 text-sm mb-2">E-mail: <span className="font-mono">{mlUser.email}</span></div>
+          <div className="text-gray-700 text-sm mb-2">Tipo: <span className="font-semibold">{mlUser.user_type}</span></div>
+          <div className="text-gray-700 text-sm">Conta criada em: <span className="font-mono">{mlUser.registration_date && new Date(mlUser.registration_date).toLocaleDateString()}</span></div>
+        </div>
+      )}
+      {!mlUser && !loading && !error && (
+        <div className="text-gray-400 mt-4">Clique em "Atualizar Meus Dados" para exibir suas informações.</div>
+      )}
+    </div>
+  );
+}
+
+function ProductsTab() {
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const fetchProducts = async () => {
+    setLoading(true);
+    setError("");
+    setProducts([]);
+    try {
+      const token = localStorage.getItem("ml_access_token");
+      const res = await fetch("/api/ml/products", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Erro ao buscar produtos");
+      } else {
+        setProducts(data.products || []);
+      }
+    } catch (err) {
+      setError("Erro de conexão");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center min-h-[300px]">
+      <button
+        onClick={fetchProducts}
+        className="mb-4 bg-blue-600 hover:bg-blue-800 text-white font-bold py-2 px-6 rounded shadow transition"
+        disabled={loading}
+      >
+        {loading ? (
+          <span className="flex items-center gap-2"><ArrowPathIcon className="w-5 h-5 animate-spin" />Buscando...</span>
+        ) : (
+          <span>Atualizar Produtos</span>
+        )}
+      </button>
+      {error && (
+        <div className="flex items-center gap-2 text-red-600 bg-red-50 border border-red-200 rounded p-3 mb-2">
+          <ExclamationCircleIcon className="w-5 h-5" />
+          <span>{error}</span>
+        </div>
+      )}
+      {products.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-3xl">
+          {products.map((prod: any) => (
+            <div key={prod.id} className="bg-white rounded-xl shadow p-4 flex flex-col">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="font-bold text-blue-700 text-lg truncate" title={prod.title}>{prod.title}</span>
+              </div>
+              <div className="text-gray-700 text-sm mb-1">ID: <span className="font-mono">{prod.id}</span></div>
+              <div className="text-gray-700 text-sm mb-1">Preço: <span className="font-semibold">R$ {prod.price?.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span></div>
+              <div className="text-gray-700 text-sm mb-1">Estoque: <span className="font-semibold">{prod.available_quantity}</span></div>
+              <div className="text-gray-700 text-sm mb-1">Status: <span className="font-semibold">{prod.status}</span></div>
+              {prod.thumbnail && (
+                <img src={prod.thumbnail} alt={prod.title} className="w-24 h-24 object-contain mt-2 self-center rounded" />
+              )}
+            </div>
           ))}
         </div>
-        <div className="bg-blue-50 p-6 rounded-lg border border-blue-200 mb-8 min-h-[200px]">
-          {renderTab()}
+      )}
+      {products.length === 0 && !loading && !error && (
+        <div className="text-gray-400 mt-4">Clique em "Atualizar Produtos" para exibir seus produtos ativos.</div>
+      )}
+    </div>
+  );
+}
+
+function OrdersTab() {
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const fetchOrders = async () => {
+    setLoading(true);
+    setError("");
+    setOrders([]);
+    try {
+      const token = localStorage.getItem("ml_access_token");
+      const res = await fetch("/api/ml/orders", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Erro ao buscar vendas");
+      } else {
+        setOrders(data.orders || []);
+      }
+    } catch (err) {
+      setError("Erro de conexão");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center min-h-[300px]">
+      <button
+        onClick={fetchOrders}
+        className="mb-4 bg-blue-600 hover:bg-blue-800 text-white font-bold py-2 px-6 rounded shadow transition"
+        disabled={loading}
+      >
+        {loading ? (
+          <span className="flex items-center gap-2"><ArrowPathIcon className="w-5 h-5 animate-spin" />Buscando...</span>
+        ) : (
+          <span>Atualizar Vendas</span>
+        )}
+      </button>
+      {error && (
+        <div className="flex items-center gap-2 text-red-600 bg-red-50 border border-red-200 rounded p-3 mb-2">
+          <ExclamationCircleIcon className="w-5 h-5" />
+          <span>{error}</span>
         </div>
-        <div className="mt-8">
-          <a href="/" className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded mr-4">
-            Voltar ao Início
-          </a>
-          <button
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-            onClick={() => {
-              localStorage.removeItem("ml_access_token");
-              router.replace("/");
-            }}
-          >
-            Sair
-          </button>
+      )}
+      {orders.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-3xl">
+          {orders.map((order: any) => (
+            <div key={order.id} className="bg-white rounded-xl shadow p-4 flex flex-col">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="font-bold text-blue-700 text-lg truncate" title={order.title}>{order.title || order.order_items?.[0]?.item?.title || 'Venda'}</span>
+                <span className={
+                  order.status === 'paid' ? 'bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs ml-auto' :
+                  order.status === 'cancelled' ? 'bg-red-100 text-red-700 px-2 py-0.5 rounded text-xs ml-auto' :
+                  'bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-xs ml-auto'
+                }>{order.status}</span>
+              </div>
+              <div className="text-gray-700 text-sm mb-1">ID: <span className="font-mono">{order.id}</span></div>
+              <div className="text-gray-700 text-sm mb-1">Valor: <span className="font-semibold">R$ {order.total_amount?.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span></div>
+              <div className="text-gray-700 text-sm mb-1">Comprador: <span className="font-semibold">{order.buyer?.nickname || order.buyer?.first_name}</span></div>
+              <div className="text-gray-700 text-sm mb-1">Data: <span className="font-mono">{order.date_created && new Date(order.date_created).toLocaleString()}</span></div>
+              <div className="text-gray-700 text-sm mb-1">Pagamento: <span className="font-semibold">{order.payments?.[0]?.status || '-'}</span></div>
+              <div className="text-gray-700 text-sm mb-1">Entrega: <span className="font-semibold">{order.fulfillment?.shipment?.status || order.shipping?.status || '-'}</span></div>
+            </div>
+          ))}
         </div>
-      </div>
-    </main>
+      )}
+      {orders.length === 0 && !loading && !error && (
+        <div className="text-gray-400 mt-4">Clique em "Atualizar Vendas" para exibir suas últimas vendas.</div>
+      )}
+    </div>
+  );
+}
+
+function OrderDetailsTab() {
+  const [orderId, setOrderId] = useState("");
+  const [order, setOrder] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const fetchOrder = async () => {
+    setLoading(true);
+    setError("");
+    setOrder(null);
+    try {
+      const token = localStorage.getItem("ml_access_token");
+      const res = await fetch(`/api/ml/order-details?orderId=${orderId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Erro ao buscar detalhes da venda");
+      } else {
+        setOrder(data);
+      }
+    } catch (err) {
+      setError("Erro de conexão");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center min-h-[300px] w-full">
+      <form
+        onSubmit={e => {
+          e.preventDefault();
+          fetchOrder();
+        }}
+        className="mb-4 flex flex-col sm:flex-row gap-2 w-full max-w-xl"
+      >
+        <input
+          type="text"
+          className="px-3 py-2 border rounded w-full"
+          placeholder="ID da venda (orderId)"
+          value={orderId}
+          onChange={e => setOrderId(e.target.value)}
+          required
+        />
+        <button
+          type="submit"
+          className="bg-blue-600 hover:bg-blue-800 text-white font-bold py-2 px-6 rounded shadow transition"
+          disabled={loading}
+        >
+          {loading ? (
+            <span className="flex items-center gap-2"><ArrowPathIcon className="w-5 h-5 animate-spin" />Buscando...</span>
+          ) : (
+            <span>Buscar Detalhes</span>
+          )}
+        </button>
+      </form>
+      {error && (
+        <div className="flex items-center gap-2 text-red-600 bg-red-50 border border-red-200 rounded p-3 mb-2">
+          <ExclamationCircleIcon className="w-5 h-5" />
+          <span>{error}</span>
+        </div>
+      )}
+      {order && (
+        <div className="bg-white rounded-xl shadow p-6 w-full max-w-lg text-left">
+          <div className="flex items-center gap-2 mb-2">
+            <CheckCircleIcon className="w-6 h-6 text-green-500" />
+            <span className="font-bold text-lg">Detalhes da Venda</span>
+          </div>
+          <div className="text-gray-700 text-sm mb-2">ID: <span className="font-mono">{order.id}</span></div>
+          <div className="text-gray-700 text-sm mb-2">Status: <span className="font-semibold">{order.status}</span></div>
+          <div className="text-gray-700 text-sm mb-2">Valor: <span className="font-semibold">R$ {order.total_amount?.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span></div>
+          <div className="text-gray-700 text-sm mb-2">Comprador: <span className="font-semibold">{order.buyer?.nickname || order.buyer?.first_name}</span></div>
+          <div className="text-gray-700 text-sm mb-2">Data: <span className="font-mono">{order.date_created && new Date(order.date_created).toLocaleString()}</span></div>
+          <div className="text-gray-700 text-sm mb-2">Pagamento: <span className="font-semibold">{order.payments?.[0]?.status || '-'}</span></div>
+          <div className="text-gray-700 text-sm mb-2">Entrega: <span className="font-semibold">{order.fulfillment?.shipment?.status || order.shipping?.status || '-'}</span></div>
+          <div className="text-gray-700 text-sm mb-2">Itens:</div>
+          <ul className="list-disc ml-6 text-gray-700 text-sm">
+            {order.order_items?.map((it: any) => (
+              <li key={it.item.id}>
+                {it.item.title} <span className="text-gray-400">(SKU: {it.item.seller_sku})</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {!order && !loading && !error && (
+        <div className="text-gray-400 mt-4">Digite o ID da venda e clique em "Buscar Detalhes".</div>
+      )}
+    </div>
+  );
+}
+
+function MessagesTab() {
+  const [orderId, setOrderId] = useState("");
+  const [messages, setMessages] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const fetchMessages = async () => {
+    setLoading(true);
+    setError("");
+    setMessages([]);
+    try {
+      const token = localStorage.getItem("ml_access_token");
+      const res = await fetch(`/api/ml/messages?orderId=${orderId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Erro ao buscar mensagens");
+      } else {
+        setMessages(data.results || data.messages || []);
+      }
+    } catch (err) {
+      setError("Erro de conexão");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center min-h-[300px] w-full">
+      <form
+        onSubmit={e => {
+          e.preventDefault();
+          fetchMessages();
+        }}
+        className="mb-4 flex flex-col sm:flex-row gap-2 w-full max-w-xl"
+      >
+        <input
+          type="text"
+          className="px-3 py-2 border rounded w-full"
+          placeholder="ID da venda (orderId)"
+          value={orderId}
+          onChange={e => setOrderId(e.target.value)}
+          required
+        />
+        <button
+          type="submit"
+          className="bg-blue-600 hover:bg-blue-800 text-white font-bold py-2 px-6 rounded shadow transition"
+          disabled={loading}
+        >
+          {loading ? (
+            <span className="flex items-center gap-2"><ArrowPathIcon className="w-5 h-5 animate-spin" />Buscando...</span>
+          ) : (
+            <span>Buscar Mensagens</span>
+          )}
+        </button>
+      </form>
+      {error && (
+        <div className="flex items-center gap-2 text-red-600 bg-red-50 border border-red-200 rounded p-3 mb-2">
+          <ExclamationCircleIcon className="w-5 h-5" />
+          <span>{error}</span>
+        </div>
+      )}
+      {messages.length > 0 && (
+        <div className="flex flex-col gap-4 w-full max-w-2xl">
+          {messages.map((msg: any, idx: number) => (
+            <div key={msg.id || idx} className="bg-white rounded-xl shadow p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="font-bold text-blue-700 text-sm">{msg.from?.user_id ? `Remetente: ${msg.from.user_id}` : "Mensagem"}</span>
+                <span className="text-gray-400 text-xs ml-auto">{msg.date_created && new Date(msg.date_created).toLocaleString()}</span>
+              </div>
+              <div className="text-gray-700 text-sm whitespace-pre-line">{msg.text?.plain || msg.text}</div>
+            </div>
+          ))}
+        </div>
+      )}
+      {messages.length === 0 && !loading && !error && (
+        <div className="text-gray-400 mt-4">Digite o ID da venda e clique em "Buscar Mensagens".</div>
+      )}
+    </div>
+  );
+}
+
+function ShippingTab() {
+  const [orderId, setOrderId] = useState("");
+  const [shipping, setShipping] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const fetchShipping = async () => {
+    setLoading(true);
+    setError("");
+    setShipping(null);
+    try {
+      const token = localStorage.getItem("ml_access_token");
+      const res = await fetch(`/api/ml/shipping?orderId=${orderId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Erro ao buscar dados de envio");
+      } else {
+        setShipping(data);
+      }
+    } catch (err) {
+      setError("Erro de conexão");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center min-h-[300px] w-full">
+      <form
+        onSubmit={e => {
+          e.preventDefault();
+          fetchShipping();
+        }}
+        className="mb-4 flex flex-col sm:flex-row gap-2 w-full max-w-xl"
+      >
+        <input
+          type="text"
+          className="px-3 py-2 border rounded w-full"
+          placeholder="ID da venda (orderId)"
+          value={orderId}
+          onChange={e => setOrderId(e.target.value)}
+          required
+        />
+        <button
+          type="submit"
+          className="bg-blue-600 hover:bg-blue-800 text-white font-bold py-2 px-6 rounded shadow transition"
+          disabled={loading}
+        >
+          {loading ? (
+            <span className="flex items-center gap-2"><ArrowPathIcon className="w-5 h-5 animate-spin" />Buscando...</span>
+          ) : (
+            <span>Buscar Etiqueta</span>
+          )}
+        </button>
+      </form>
+      {error && (
+        <div className="flex items-center gap-2 text-red-600 bg-red-50 border border-red-200 rounded p-3 mb-2">
+          <ExclamationCircleIcon className="w-5 h-5" />
+          <span>{error}</span>
+        </div>
+      )}
+      {shipping && (
+        <div className="bg-white rounded-xl shadow p-6 w-full max-w-lg text-left">
+          <div className="flex items-center gap-2 mb-2">
+            <CheckCircleIcon className="w-6 h-6 text-green-500" />
+            <span className="font-bold text-lg">Dados de Envio</span>
+          </div>
+          <div className="text-gray-700 text-sm mb-2">ID do Envio: <span className="font-mono">{shipping.id}</span></div>
+          <div className="text-gray-700 text-sm mb-2">Status: <span className="font-semibold">{shipping.status}</span></div>
+          <div className="text-gray-700 text-sm mb-2">Endereço: <span className="font-semibold">{shipping.receiver_address?.address_line}, {shipping.receiver_address?.city?.name} - {shipping.receiver_address?.state?.name}</span></div>
+          <div className="text-gray-700 text-sm mb-2">Tipo: <span className="font-semibold">{shipping.shipping_mode}</span></div>
+          {shipping.labelUrl && (
+            <a
+              href={shipping.labelUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block mt-4 bg-green-600 hover:bg-green-800 text-white font-bold py-2 px-6 rounded shadow transition"
+            >
+              Baixar Etiqueta
+            </a>
+          )}
+        </div>
+      )}
+      {!shipping && !loading && !error && (
+        <div className="text-gray-400 mt-4">Digite o ID da venda e clique em "Buscar Etiqueta".</div>
+      )}
+    </div>
+  );
+}
+
+function BuyerTab() {
+  const [orderId, setOrderId] = useState("");
+  const [buyer, setBuyer] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const fetchBuyer = async () => {
+    setLoading(true);
+    setError("");
+    setBuyer(null);
+    try {
+      const token = localStorage.getItem("ml_access_token");
+      const res = await fetch(`/api/ml/buyer?orderId=${orderId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Erro ao buscar dados do cliente");
+      } else {
+        setBuyer(data);
+      }
+    } catch (err) {
+      setError("Erro de conexão");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center min-h-[300px] w-full">
+      <form
+        onSubmit={e => {
+          e.preventDefault();
+          fetchBuyer();
+        }}
+        className="mb-4 flex flex-col sm:flex-row gap-2 w-full max-w-xl"
+      >
+        <input
+          type="text"
+          className="px-3 py-2 border rounded w-full"
+          placeholder="ID da venda (orderId)"
+          value={orderId}
+          onChange={e => setOrderId(e.target.value)}
+          required
+        />
+        <button
+          type="submit"
+          className="bg-blue-600 hover:bg-blue-800 text-white font-bold py-2 px-6 rounded shadow transition"
+          disabled={loading}
+        >
+          {loading ? (
+            <span className="flex items-center gap-2"><ArrowPathIcon className="w-5 h-5 animate-spin" />Buscando...</span>
+          ) : (
+            <span>Buscar Cliente</span>
+          )}
+        </button>
+      </form>
+      {error && (
+        <div className="flex items-center gap-2 text-red-600 bg-red-50 border border-red-200 rounded p-3 mb-2">
+          <ExclamationCircleIcon className="w-5 h-5" />
+          <span>{error}</span>
+        </div>
+      )}
+      {buyer && (
+        <div className="bg-white rounded-xl shadow p-6 w-full max-w-lg text-left">
+          <div className="flex items-center gap-2 mb-2">
+            <CheckCircleIcon className="w-6 h-6 text-green-500" />
+            <span className="font-bold text-lg">Dados do Cliente</span>
+          </div>
+          <div className="text-gray-700 text-sm mb-2">ID: <span className="font-mono">{buyer.id}</span></div>
+          <div className="text-gray-700 text-sm mb-2">Nome: <span className="font-semibold">{buyer.nickname || buyer.first_name + ' ' + buyer.last_name}</span></div>
+          <div className="text-gray-700 text-sm mb-2">E-mail: <span className="font-mono">{buyer.email}</span></div>
+          <div className="text-gray-700 text-sm mb-2">Tipo: <span className="font-semibold">{buyer.user_type}</span></div>
+          <div className="text-gray-700 text-sm">Conta criada em: <span className="font-mono">{buyer.registration_date && new Date(buyer.registration_date).toLocaleDateString()}</span></div>
+        </div>
+      )}
+      {!buyer && !loading && !error && (
+        <div className="text-gray-400 mt-4">Digite o ID da venda e clique em "Buscar Cliente".</div>
+      )}
+    </div>
+  );
+}
+
+function UpdateOrderTab() {
+  const [orderId, setOrderId] = useState("");
+  const [status, setStatus] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<string | null>(null);
+  const [error, setError] = useState("");
+
+  const statusOptions = [
+    { value: "paid", label: "Pago" },
+    { value: "confirmed", label: "Confirmado" },
+    { value: "shipped", label: "Enviado" },
+    { value: "delivered", label: "Entregue" },
+    { value: "cancelled", label: "Cancelado" },
+  ];
+
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setResult(null);
+    setError("");
+    try {
+      const token = localStorage.getItem("ml_access_token");
+      const res = await fetch("/api/ml/update-order", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ orderId, status }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Erro ao atualizar status");
+      } else {
+        setResult("Status atualizado com sucesso!");
+      }
+    } catch (err) {
+      setError("Erro de conexão");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center min-h-[300px] w-full">
+      <form onSubmit={handleUpdate} className="mb-4 flex flex-col sm:flex-row gap-2 w-full max-w-xl">
+        <input
+          type="text"
+          className="px-3 py-2 border rounded w-full"
+          placeholder="ID da venda (orderId)"
+          value={orderId}
+          onChange={e => setOrderId(e.target.value)}
+          required
+        />
+        <select
+          className="px-3 py-2 border rounded w-full sm:w-auto"
+          value={status}
+          onChange={e => setStatus(e.target.value)}
+          required
+        >
+          <option value="">Selecione o novo status</option>
+          {statusOptions.map(opt => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
+        <button
+          type="submit"
+          className="bg-blue-600 hover:bg-blue-800 text-white font-bold py-2 px-6 rounded shadow transition"
+          disabled={loading}
+        >
+          {loading ? (
+            <span className="flex items-center gap-2"><ArrowPathIcon className="w-5 h-5 animate-spin" />Atualizando...</span>
+          ) : (
+            <span>Atualizar Status</span>
+          )}
+        </button>
+      </form>
+      {error && (
+        <div className="flex items-center gap-2 text-red-600 bg-red-50 border border-red-200 rounded p-3 mb-2">
+          <ExclamationCircleIcon className="w-5 h-5" />
+          <span>{error}</span>
+        </div>
+      )}
+      {result && (
+        <div className="flex items-center gap-2 text-green-700 bg-green-50 border border-green-200 rounded p-3 mb-2">
+          <CheckCircleIcon className="w-5 h-5" />
+          <span>{result}</span>
+        </div>
+      )}
+      {!result && !loading && !error && (
+        <div className="text-gray-400 mt-4">Digite o ID da venda, selecione o status e clique em "Atualizar Status".</div>
+      )}
+    </div>
+  );
+}
+
+function SendMessageTab() {
+  const [orderId, setOrderId] = useState("");
+  const [text, setText] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<string | null>(null);
+  const [error, setError] = useState("");
+
+  const handleSend = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setResult(null);
+    setError("");
+    try {
+      const token = localStorage.getItem("ml_access_token");
+      const res = await fetch("/api/ml/send-message", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ orderId, text }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Erro ao enviar mensagem");
+      } else {
+        setResult("Mensagem enviada com sucesso!");
+        setText("");
+      }
+    } catch (err) {
+      setError("Erro de conexão");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center min-h-[300px] w-full">
+      <form onSubmit={handleSend} className="mb-4 flex flex-col sm:flex-row gap-2 w-full max-w-xl">
+        <input
+          type="text"
+          className="px-3 py-2 border rounded w-full"
+          placeholder="ID da venda (orderId)"
+          value={orderId}
+          onChange={e => setOrderId(e.target.value)}
+          required
+        />
+        <textarea
+          className="px-3 py-2 border rounded w-full sm:w-64 align-top"
+          placeholder="Mensagem ao comprador"
+          value={text}
+          onChange={e => setText(e.target.value)}
+          required
+          rows={3}
+        />
+        <button
+          type="submit"
+          className="bg-blue-600 hover:bg-blue-800 text-white font-bold py-2 px-6 rounded shadow transition"
+          disabled={loading}
+        >
+          {loading ? (
+            <span className="flex items-center gap-2"><ArrowPathIcon className="w-5 h-5 animate-spin" />Enviando...</span>
+          ) : (
+            <span>Enviar Mensagem</span>
+          )}
+        </button>
+      </form>
+      {error && (
+        <div className="flex items-center gap-2 text-red-600 bg-red-50 border border-red-200 rounded p-3 mb-2">
+          <ExclamationCircleIcon className="w-5 h-5" />
+          <span>{error}</span>
+        </div>
+      )}
+      {result && (
+        <div className="flex items-center gap-2 text-green-700 bg-green-50 border border-green-200 rounded p-3 mb-2">
+          <CheckCircleIcon className="w-5 h-5" />
+          <span>{result}</span>
+        </div>
+      )}
+      {!result && !loading && !error && (
+        <div className="text-gray-400 mt-4">Digite o ID da venda, escreva a mensagem e clique em "Enviar Mensagem".</div>
+      )}
+    </div>
   );
 }
