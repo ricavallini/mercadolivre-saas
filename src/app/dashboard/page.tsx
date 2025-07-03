@@ -238,7 +238,7 @@ function MeTab({ darkMode }: { darkMode: boolean }) {
         </div>
       )}
       {!mlUser && !loading && !error && (
-        <div className="text-gray-400 mt-4">Clique em "Atualizar Meus Dados" para exibir suas informações.</div>
+        <div className="text-gray-400 mt-4">Clique em &quot;Atualizar Meus Dados&quot; para exibir suas informações.</div>
       )}
     </div>
   );
@@ -309,7 +309,7 @@ function ProductsTab({ darkMode }: { darkMode: boolean }) {
         </div>
       )}
       {products.length === 0 && !loading && !error && (
-        <div className="text-gray-400 mt-4">Clique em "Atualizar Produtos" para exibir seus produtos ativos.</div>
+        <div className="text-gray-400 mt-4">Clique em &quot;Atualizar Produtos&quot; para exibir seus produtos ativos.</div>
       )}
     </div>
   );
@@ -384,7 +384,7 @@ function OrdersTab({ darkMode }: { darkMode: boolean }) {
         </div>
       )}
       {orders.length === 0 && !loading && !error && (
-        <div className="text-gray-400 mt-4">Clique em "Atualizar Vendas" para exibir suas últimas vendas.</div>
+        <div className="text-gray-400 mt-4">Clique em &quot;Atualizar Vendas&quot; para exibir suas últimas vendas.</div>
       )}
     </div>
   );
@@ -477,7 +477,7 @@ function OrderDetailsTab({ darkMode }: { darkMode: boolean }) {
         </div>
       )}
       {!order && !loading && !error && (
-        <div className="text-gray-400 mt-4">Digite o ID da venda e clique em "Buscar Detalhes".</div>
+        <div className="text-gray-400 mt-4">Digite o ID da venda e clique em &quot;Buscar Detalhes&quot;.</div>
       )}
     </div>
   );
@@ -560,7 +560,7 @@ function MessagesTab({ darkMode }: { darkMode: boolean }) {
         </div>
       )}
       {messages.length === 0 && !loading && !error && (
-        <div className="text-gray-400 mt-4">Digite o ID da venda e clique em "Buscar Mensagens".</div>
+        <div className="text-gray-400 mt-4">Digite o ID da venda e clique em &quot;Buscar Mensagens&quot;.</div>
       )}
     </div>
   );
@@ -652,7 +652,7 @@ function ShippingTab({ darkMode }: { darkMode: boolean }) {
         </div>
       )}
       {!shipping && !loading && !error && (
-        <div className="text-gray-400 mt-4">Digite o ID da venda e clique em "Buscar Etiqueta".</div>
+        <div className="text-gray-400 mt-4">Digite o ID da venda e clique em &quot;Buscar Etiqueta&quot;.</div>
       )}
     </div>
   );
@@ -735,7 +735,7 @@ function BuyerTab({ darkMode }: { darkMode: boolean }) {
         </div>
       )}
       {!buyer && !loading && !error && (
-        <div className="text-gray-400 mt-4">Digite o ID da venda e clique em "Buscar Cliente".</div>
+        <div className="text-gray-400 mt-4">Digite o ID da venda e clique em &quot;Buscar Cliente&quot;.</div>
       )}
     </div>
   );
@@ -831,7 +831,7 @@ function UpdateOrderTab({ darkMode }: { darkMode: boolean }) {
         </div>
       )}
       {!result && !loading && !error && (
-        <div className="text-gray-400 mt-4">Digite o ID da venda, selecione o status e clique em "Atualizar Status".</div>
+        <div className="text-gray-400 mt-4">Digite o ID da venda, selecione o status e clique em &quot;Atualizar Status&quot;.</div>
       )}
     </div>
   );
@@ -917,7 +917,7 @@ function SendMessageTab({ darkMode }: { darkMode: boolean }) {
         </div>
       )}
       {!result && !loading && !error && (
-        <div className="text-gray-400 mt-4">Digite o ID da venda, escreva a mensagem e clique em "Enviar Mensagem".</div>
+        <div className="text-gray-400 mt-4">Digite o ID da venda, escreva a mensagem e clique em &quot;Enviar Mensagem&quot;.</div>
       )}
     </div>
   );
