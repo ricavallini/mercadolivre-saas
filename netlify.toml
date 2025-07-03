@@ -23,4 +23,5 @@
 # Configuração de build para Prisma
 [build.environment]
   PRISMA_GENERATE_DATAPROXY = "true"
-  PRISMA_CLIENT_ENGINE_TYPE = "library" 
+  PRISMA_CLIENT_ENGINE_TYPE = "library"
+  SHARP_IGNORE_GLOBAL_LIBVIPS = "1" 

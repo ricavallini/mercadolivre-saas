@@ -12,6 +12,10 @@ rm -rf node_modules/@prisma
 echo "📦 Instalando dependências..."
 npm install
 
+# Instalar sharp especificamente
+echo "🔧 Instalando sharp..."
+npm install sharp
+
 # Gerar cliente Prisma
 echo "🔧 Gerando cliente Prisma..."
 npx prisma generate

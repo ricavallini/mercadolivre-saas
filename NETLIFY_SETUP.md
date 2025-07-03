@@ -74,14 +74,23 @@ No painel do Netlify, vá em:
 
 Após conectar o GitHub, cada push para a branch `main` fará um deploy automático.
 
-## Solução do Problema do Prisma
+## Solução dos Problemas de Build
 
+### Problema do Prisma
 O erro era causado pelo cache do Netlify CI. A solução inclui:
 
 1. **Script de build personalizado** que limpa o cache do Prisma
 2. **Geração do cliente Prisma** antes do build
 3. **Configuração de ambiente** específica para o Prisma
 4. **Plugin Next.js** do Netlify
+
+### Problema do Sharp
+O erro do pacote `sharp` foi resolvido com:
+
+1. **Instalação do sharp** no package.json
+2. **Configuração de ambiente** `SHARP_IGNORE_GLOBAL_LIBVIPS = "1"`
+3. **Instalação específica** no script de build
+4. **Configuração de imagens** no next.config.mjs
 
 ## URLs de Exemplo
 
