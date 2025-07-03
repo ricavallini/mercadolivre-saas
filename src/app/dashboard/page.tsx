@@ -1,8 +1,9 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Fragment } from "react";
 import { useRouter } from "next/navigation";
-import { Tab } from "@headlessui/react";
-import { CheckCircleIcon, ExclamationCircleIcon, ArrowPathIcon } from "@heroicons/react/24/outline";
+import { Tab, Dialog } from "@headlessui/react";
+import { CheckCircleIcon, ExclamationCircleIcon, ArrowPathIcon, MoonIcon, SunIcon } from "@heroicons/react/24/outline";
+import { Transition } from "@headlessui/react";
 
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(" ");
@@ -26,6 +27,8 @@ export default function Dashboard() {
   const [mlUser, setMlUser] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [darkMode, setDarkMode] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -35,6 +38,22 @@ export default function Dashboard() {
       }
     }
   }, [router]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("ml_dark_mode");
+    if (saved === "true") setDarkMode(true);
+    if (!localStorage.getItem("ml_onboarding_done")) setShowOnboarding(true);
+  }, []);
+
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("ml_dark_mode", "true");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("ml_dark_mode", "false");
+    }
+  }, [darkMode]);
 
   const fetchMLUser = async () => {
     setLoading(true);
@@ -61,21 +80,78 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-100 flex flex-col items-center py-8 px-2">
-      <div className="w-full max-w-4xl bg-white rounded-2xl shadow-xl p-6">
-        <h1 className="text-3xl font-bold text-blue-800 mb-2 text-center">Dashboard Mercado Livre</h1>
-        <p className="text-gray-500 mb-6 text-center">Gerencie sua conta Mercado Livre de forma simples, rápida e segura.</p>
+    <div className={classNames(
+      "min-h-screen flex flex-col items-center py-8 px-2 transition-colors duration-300",
+      darkMode ? "bg-gradient-to-br from-gray-900 to-blue-950" : "bg-gradient-to-br from-gray-50 to-blue-100"
+    )}>
+      <Transition appear show={showOnboarding} as={Fragment}>
+        <Dialog as="div" className="relative z-50" onClose={() => {}}>
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300" enterFrom="opacity-0" enterTo="opacity-100"
+            leave="ease-in duration-200" leaveFrom="opacity-100" leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-black bg-opacity-40" />
+          </Transition.Child>
+          <div className="fixed inset-0 flex items-center justify-center p-4">
+            <Transition.Child
+              as={Fragment}
+              enter="ease-out duration-300" enterFrom="opacity-0 scale-95" enterTo="opacity-100 scale-100"
+              leave="ease-in duration-200" leaveFrom="opacity-100 scale-100" leaveTo="opacity-0 scale-95"
+            >
+              <Dialog.Panel className="w-full max-w-lg transform overflow-hidden rounded-2xl bg-white dark:bg-gray-900 p-8 text-left align-middle shadow-xl transition-all">
+                <Dialog.Title as="h3" className="text-2xl font-bold leading-6 text-blue-800 dark:text-blue-200 mb-2">Bem-vindo ao Dashboard Mercado Livre!</Dialog.Title>
+                <div className="mt-2 text-gray-700 dark:text-gray-200 text-base">
+                  <ul className="list-disc ml-6 space-y-1">
+                    <li>Informe seu <b>access token</b> na tela inicial para acessar todas as funcionalidades.</li>
+                    <li>Navegue pelas <b>abas</b> para consultar produtos, vendas, mensagens, etiquetas e mais.</li>
+                    <li>Use o <b>modo escuro</b> no topo direito para conforto visual.</li>
+                    <li>Receba feedback visual claro para cada ação (sucesso, erro, carregando).</li>
+                  </ul>
+                  <div className="mt-4 text-sm text-gray-500 dark:text-gray-400">Dica: Você pode atualizar ou buscar dados a qualquer momento usando os botões de cada aba.</div>
+                </div>
+                <div className="mt-6 flex justify-end">
+                  <button
+                    className="bg-blue-600 hover:bg-blue-800 text-white font-bold py-2 px-6 rounded shadow transition"
+                    onClick={() => {
+                      setShowOnboarding(false);
+                      localStorage.setItem("ml_onboarding_done", "true");
+                    }}
+                  >
+                    Começar
+                  </button>
+                </div>
+              </Dialog.Panel>
+            </Transition.Child>
+          </div>
+        </Dialog>
+      </Transition>
+      <div className={classNames(
+        "w-full max-w-4xl rounded-2xl shadow-xl p-6 transition-colors duration-300",
+        darkMode ? "bg-gray-900 border border-gray-700" : "bg-white"
+      )}>
+        <div className="flex justify-between items-center mb-2">
+          <h1 className={"text-3xl font-bold text-blue-800 dark:text-blue-200 text-center w-full"}>Dashboard Mercado Livre</h1>
+          <button
+            className="ml-2 p-2 rounded-full border border-blue-200 dark:border-gray-700 bg-blue-50 dark:bg-gray-800 hover:bg-blue-100 dark:hover:bg-gray-700 transition"
+            title={darkMode ? "Modo claro" : "Modo escuro"}
+            onClick={() => setDarkMode(d => !d)}
+          >
+            {darkMode ? <SunIcon className="w-6 h-6 text-yellow-300" /> : <MoonIcon className="w-6 h-6 text-blue-700" />}
+          </button>
+        </div>
+        <p className="text-gray-500 dark:text-gray-300 mb-6 text-center">Gerencie sua conta Mercado Livre de forma simples, rápida e segura.</p>
         <Tab.Group selectedIndex={selectedIndex} onChange={setSelectedIndex}>
-          <Tab.List className="flex space-x-1 rounded-xl bg-blue-50 p-1 mb-6 overflow-x-auto">
+          <Tab.List className="flex space-x-1 rounded-xl bg-blue-50 dark:bg-gray-800 p-1 mb-6 overflow-x-auto transition-colors duration-300">
             {tabs.map((tab, idx) => (
               <Tab
                 key={tab.name}
                 className={({ selected }: { selected: boolean }) =>
                   classNames(
-                    "w-full py-2.5 px-4 text-sm leading-5 font-semibold rounded-lg",
+                    "w-full py-2.5 px-4 text-sm leading-5 font-semibold rounded-lg transition",
                     selected
-                      ? "bg-blue-600 text-white shadow"
-                      : "text-blue-700 hover:bg-blue-100 hover:text-blue-900"
+                      ? "bg-blue-600 dark:bg-blue-700 text-white shadow"
+                      : "text-blue-700 dark:text-blue-200 hover:bg-blue-100 dark:hover:bg-gray-700 hover:text-blue-900 dark:hover:text-white"
                   )
                 }
               >
@@ -84,15 +160,15 @@ export default function Dashboard() {
             ))}
           </Tab.List>
           <Tab.Panels>
-            <Tab.Panel><MeTab /></Tab.Panel>
-            <Tab.Panel><ProductsTab /></Tab.Panel>
-            <Tab.Panel><OrdersTab /></Tab.Panel>
-            <Tab.Panel><OrderDetailsTab /></Tab.Panel>
-            <Tab.Panel><MessagesTab /></Tab.Panel>
-            <Tab.Panel><ShippingTab /></Tab.Panel>
-            <Tab.Panel><BuyerTab /></Tab.Panel>
-            <Tab.Panel><UpdateOrderTab /></Tab.Panel>
-            <Tab.Panel><SendMessageTab /></Tab.Panel>
+            <Tab.Panel><MeTab darkMode={darkMode} /></Tab.Panel>
+            <Tab.Panel><ProductsTab darkMode={darkMode} /></Tab.Panel>
+            <Tab.Panel><OrdersTab darkMode={darkMode} /></Tab.Panel>
+            <Tab.Panel><OrderDetailsTab darkMode={darkMode} /></Tab.Panel>
+            <Tab.Panel><MessagesTab darkMode={darkMode} /></Tab.Panel>
+            <Tab.Panel><ShippingTab darkMode={darkMode} /></Tab.Panel>
+            <Tab.Panel><BuyerTab darkMode={darkMode} /></Tab.Panel>
+            <Tab.Panel><UpdateOrderTab darkMode={darkMode} /></Tab.Panel>
+            <Tab.Panel><SendMessageTab darkMode={darkMode} /></Tab.Panel>
           </Tab.Panels>
         </Tab.Group>
       </div>
@@ -100,7 +176,7 @@ export default function Dashboard() {
   );
 }
 
-function MeTab() {
+function MeTab({ darkMode }: { darkMode: boolean }) {
   const [mlUser, setMlUser] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -168,7 +244,7 @@ function MeTab() {
   );
 }
 
-function ProductsTab() {
+function ProductsTab({ darkMode }: { darkMode: boolean }) {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -239,7 +315,7 @@ function ProductsTab() {
   );
 }
 
-function OrdersTab() {
+function OrdersTab({ darkMode }: { darkMode: boolean }) {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -314,7 +390,7 @@ function OrdersTab() {
   );
 }
 
-function OrderDetailsTab() {
+function OrderDetailsTab({ darkMode }: { darkMode: boolean }) {
   const [orderId, setOrderId] = useState("");
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -407,7 +483,7 @@ function OrderDetailsTab() {
   );
 }
 
-function MessagesTab() {
+function MessagesTab({ darkMode }: { darkMode: boolean }) {
   const [orderId, setOrderId] = useState("");
   const [messages, setMessages] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -490,7 +566,7 @@ function MessagesTab() {
   );
 }
 
-function ShippingTab() {
+function ShippingTab({ darkMode }: { darkMode: boolean }) {
   const [orderId, setOrderId] = useState("");
   const [shipping, setShipping] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -582,7 +658,7 @@ function ShippingTab() {
   );
 }
 
-function BuyerTab() {
+function BuyerTab({ darkMode }: { darkMode: boolean }) {
   const [orderId, setOrderId] = useState("");
   const [buyer, setBuyer] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -665,7 +741,7 @@ function BuyerTab() {
   );
 }
 
-function UpdateOrderTab() {
+function UpdateOrderTab({ darkMode }: { darkMode: boolean }) {
   const [orderId, setOrderId] = useState("");
   const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(false);
@@ -761,7 +837,7 @@ function UpdateOrderTab() {
   );
 }
 
-function SendMessageTab() {
+function SendMessageTab({ darkMode }: { darkMode: boolean }) {
   const [orderId, setOrderId] = useState("");
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
