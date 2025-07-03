@@ -9,17 +9,29 @@ export async function GET(request: NextRequest) {
   const accessToken = authHeader.replace('Bearer ', '').trim();
 
   try {
-    // Buscar últimas vendas
-    const res = await fetch('https://api.mercadolibre.com/orders/search?seller=me&sort=date_desc&limit=20', {
+    // Buscar o ID do usuário
+    const userRes = await fetch('https://api.mercadolibre.com/users/me', {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
-    if (!res.ok) {
-      console.error('[orders] Failed to fetch orders', res.status);
-      return NextResponse.json({ error: 'Failed to fetch orders' }, { status: res.status });
+    if (!userRes.ok) {
+      console.error('[orders] Failed to fetch user info', userRes.status);
+      return NextResponse.json({ error: 'Failed to fetch user info' }, { status: userRes.status });
     }
-    const data = await res.json();
+    const user = await userRes.json();
+    const userId = user.id;
+
+    // Buscar vendas (orders) pagas
+    const ordersRes = await fetch(`https://api.mercadolibre.com/orders/search?seller=${userId}&order.status=paid&sort=date_desc&limit=10`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!ordersRes.ok) {
+      console.error('[orders] Failed to fetch orders', ordersRes.status);
+      return NextResponse.json({ error: 'Failed to fetch orders' }, { status: ordersRes.status });
+    }
+    const ordersData = await ordersRes.json();
+
     console.info('[orders] Vendas retornadas');
-    return NextResponse.json(data);
+    return NextResponse.json({ total: ordersData.paging?.total || 0, orders: ordersData.results || [] });
   } catch (err) {
     console.error('[orders] Internal error', err);
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });

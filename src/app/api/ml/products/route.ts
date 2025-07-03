@@ -9,17 +9,18 @@ export async function GET(request: NextRequest) {
   const accessToken = authHeader.replace('Bearer ', '').trim();
 
   try {
-    // Buscar produtos ativos
-    const res = await fetch('https://api.mercadolibre.com/users/me', {
+    // Buscar o ID do usuário
+    const userRes = await fetch('https://api.mercadolibre.com/users/me', {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
-    if (!res.ok) {
-      console.error('[products] Failed to fetch user info', res.status);
-      return NextResponse.json({ error: 'Failed to fetch user info' }, { status: res.status });
+    if (!userRes.ok) {
+      console.error('[products] Failed to fetch user info', userRes.status);
+      return NextResponse.json({ error: 'Failed to fetch user info' }, { status: userRes.status });
     }
-    const user = await res.json();
+    const user = await userRes.json();
     const userId = user.id;
 
+    // Buscar produtos ativos
     const itemsRes = await fetch(`https://api.mercadolibre.com/users/${userId}/items/search?status=active`, {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
@@ -27,9 +28,22 @@ export async function GET(request: NextRequest) {
       console.error('[products] Failed to fetch products', itemsRes.status);
       return NextResponse.json({ error: 'Failed to fetch products' }, { status: itemsRes.status });
     }
-    const items = await itemsRes.json();
+    const itemsData = await itemsRes.json();
+
+    // Buscar detalhes dos produtos (limitando para os 10 primeiros para evitar excesso de requisições)
+    const ids = (itemsData.results || []).slice(0, 10);
+    let products: any[] = [];
+    if (ids.length > 0) {
+      const detailsRes = await fetch(`https://api.mercadolibre.com/items?ids=${ids.join(',')}`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (detailsRes.ok) {
+        products = await detailsRes.json();
+      }
+    }
+
     console.info('[products] Produtos retornados');
-    return NextResponse.json(items);
+    return NextResponse.json({ total: itemsData.paging?.total || 0, products });
   } catch (err) {
     console.error('[products] Internal error', err);
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
