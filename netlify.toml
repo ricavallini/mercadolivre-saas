@@ -5,6 +5,9 @@
 [build.environment]
   NODE_VERSION = "18"
   NPM_VERSION = "9"
+  PRISMA_GENERATE_DATAPROXY = "true"
+  PRISMA_CLIENT_ENGINE_TYPE = "library"
+  SHARP_IGNORE_GLOBAL_LIBVIPS = "1"
 
 # Configuração para resolver problema do Prisma no Netlify
 [[plugins]]
@@ -18,10 +21,4 @@
 
 # Configuração para evitar cache do Prisma Client
 [build.processing]
-  skip_processing = false
-
-# Configuração de build para Prisma
-[build.environment]
-  PRISMA_GENERATE_DATAPROXY = "true"
-  PRISMA_CLIENT_ENGINE_TYPE = "library"
-  SHARP_IGNORE_GLOBAL_LIBVIPS = "1" 
+  skip_processing = false 
